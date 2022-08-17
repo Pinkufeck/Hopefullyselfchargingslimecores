@@ -266,6 +266,11 @@
 	required_reagents = list(/datum/reagent/water = 1)
 	required_container = /obj/item/slime_extract/yellow
 	required_other = TRUE
+	
+/datum/chemical_reaction/slime/slimecell/on_reaction(datum/reagents/holder, created_volume)
+	new /obj/item/stock_parts/cell/high/slime(get_turf(holder.my_atom))
+	..()
+
 
 /datum/chemical_reaction/slime/slimeglow/on_reaction(datum/reagents/holder)
 	var/turf/T = get_turf(holder.my_atom)
