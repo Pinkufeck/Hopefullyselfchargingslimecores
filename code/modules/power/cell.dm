@@ -33,6 +33,8 @@
 	///how much power is given every tick in a recharger
 	var/chargerate = 100
 	///If true, the cell will state it's maximum charge in it's description
+	var/self_recharge = 0
+	//does it self recharge, over time, or not?
 	var/ratingdesc = TRUE
 	///If it's a grown that acts as a battery, add a wire overlay to it.
 	var/grown_battery = FALSE
@@ -42,6 +44,7 @@
 
 /obj/item/stock_parts/cell/Initialize(mapload, override_maxcharge)
 	. = ..()
+	START_PROCESSING(SSobj, src)
 	create_reagents(5, INJECTABLE | DRAINABLE)
 	if (override_maxcharge)
 		maxcharge = override_maxcharge
@@ -50,6 +53,25 @@
 		desc += " This one has a rating of [DisplayEnergy(maxcharge)], and you should not swallow it."
 	update_appearance()
 
+/obj/item/stock_parts/cell/Destroy()
+	STOP_PROCESSING(SSobj, src)
+	return ..()
+
+/obj/item/stock_parts/cell/vv_edit_var(var_name, var_value)
+	switch(var_name)
+		if(NAMEOF(src, self_recharge))
+			if(var_value)
+				START_PROCESSING(SSobj, src)
+			else
+				STOP_PROCESSING(SSobj, src)
+	. = ..()
+
+/obj/item/stock_parts/cell/process(delta_time)
+	if(self_recharge)
+		give(chargerate * 0.125 * delta_time)
+	else
+		return PROCESS_KILL
+		
 /obj/item/stock_parts/cell/create_reagents(max_vol, flags)
 	. = ..()
 	RegisterSignal(reagents, list(COMSIG_REAGENTS_NEW_REAGENT, COMSIG_REAGENTS_ADD_REAGENT, COMSIG_REAGENTS_DEL_REAGENT, COMSIG_REAGENTS_REM_REAGENT), .proc/on_reagent_change)
@@ -358,7 +380,18 @@
 	custom_materials = null
 	grown_battery = TRUE //it has the overlays for wires
 	custom_premium_price = PAYCHECK_ASSISTANT
+	
+/obj/item/stock_parts/cell/high/slime
+	name = "charged slime core"
+	desc = "A yellow slime core infused with plasma, it crackles with power."
+	icon = 'icons/mob/slimes.dmi'
+	icon_state = "yellow slime extract"
+	custom_materials = null
+	rating = 5 //self-recharge makes these desirable
+	self_recharge = 1 // Infused slime cores self-recharge, over time
 
+/*Hypercharged slime cell - located in /code/modules/research/xenobiology/crossbreeding/_misc.dm
+/obj/item/stock_parts/cell/high/slime/hypercharged */
 /obj/item/stock_parts/cell/emproof
 	name = "\improper EMP-proof cell"
 	desc = "An EMP-proof cell."
